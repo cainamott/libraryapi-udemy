@@ -1,8 +1,7 @@
 package io.github.mottacaina.libraryapi.dto;
 
 import io.github.mottacaina.libraryapi.model.Autor;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.*;
 
 import java.time.LocalDate;
 import java.util.UUID;
@@ -10,11 +9,14 @@ import java.util.UUID;
 
 public record AutorDTO(
         UUID id,
-        @NotBlank
+        @NotBlank(message = "campo obrigatório")
+        @Size(min = 2, max = 100, message = "Campo fora do tamanho padrão")
         String nome,
-        @NotNull
+        @NotNull(message = "campo obrigatório")
+        @Past(message = "Não pode ser uma data futura")
         LocalDate dataNascimento,
-        @NotBlank
+        @NotBlank(message = "campo obrigatório")
+        @Size(min = 2, max = 100, message = "Campo fora do tamanho padrão")
         String nacionalidade) {
 
     public Autor mapearParaAutor(){

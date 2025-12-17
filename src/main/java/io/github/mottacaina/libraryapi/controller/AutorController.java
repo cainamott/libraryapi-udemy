@@ -7,6 +7,7 @@ import io.github.mottacaina.libraryapi.exceptions.RegistroDuplicadoException;
 import io.github.mottacaina.libraryapi.model.Autor;
 import io.github.mottacaina.libraryapi.repository.AutorRepository;
 import io.github.mottacaina.libraryapi.service.AutorService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.apache.coyote.Response;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,7 +32,7 @@ public class AutorController {
 
     @PostMapping
 
-    public ResponseEntity<Object> salvar(@RequestBody AutorDTO autorDTO){
+    public ResponseEntity<Object> salvar(@RequestBody @Valid AutorDTO autorDTO){
         try {
             var autorEntity = autorDTO.mapearParaAutor();
             autorService.salvar(autorEntity);
