@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.UUID;
 
 @Service
 public class TransacaoService {
@@ -20,6 +21,16 @@ public class TransacaoService {
 
     @Autowired
     private LivroRepository livroRepository;
+
+    @Transactional
+    public void atualizacaoSemAtualizar(){
+
+        var livro = livroRepository.findById(UUID.fromString("")).orElse(null);
+
+        livro.setDataPublicacao(LocalDate.of(3034, 6, 1));
+
+        livroRepository.save(livro);
+    }
 
     @Transactional
     public void executar(){
