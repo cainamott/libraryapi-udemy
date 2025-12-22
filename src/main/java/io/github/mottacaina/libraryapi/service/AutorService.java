@@ -3,8 +3,10 @@ package io.github.mottacaina.libraryapi.service;
 import io.github.mottacaina.libraryapi.dto.AutorDTO;
 import io.github.mottacaina.libraryapi.exceptions.OperacaoNaoPermitidaException;
 import io.github.mottacaina.libraryapi.model.Autor;
+import io.github.mottacaina.libraryapi.model.Usuario;
 import io.github.mottacaina.libraryapi.repository.AutorRepository;
 import io.github.mottacaina.libraryapi.repository.LivroRepository;
+import io.github.mottacaina.libraryapi.security.SecurityService;
 import io.github.mottacaina.libraryapi.validator.AutorValidator;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Example;
@@ -22,10 +24,13 @@ public class AutorService {
     private final AutorRepository autorRepository;
     private final AutorValidator autorValidator;
     private final LivroRepository livroRepository;
+    private final SecurityService securityService;
 
     public Autor salvar(Autor autor){
 
         autorValidator.validar(autor);
+        Usuario usuario = securityService.obterUsuarioLogado();
+        autor.setUsuario(usuario);
         return autorRepository.save(autor);
     }
 
