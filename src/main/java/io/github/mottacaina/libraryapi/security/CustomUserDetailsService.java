@@ -9,7 +9,7 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 
 @RequiredArgsConstructor
-public class CustomUserSecurityService implements UserDetailsService {
+public class CustomUserDetailsService implements UserDetailsService {
 
     private final UsuarioService userService;
 

@@ -1,10 +1,11 @@
 package io.github.mottacaina.libraryapi.configuration;
 
-import io.github.mottacaina.libraryapi.security.CustomUserSecurityService;
+import io.github.mottacaina.libraryapi.security.CustomUserDetailsService;
 import io.github.mottacaina.libraryapi.service.UsuarioService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -30,11 +31,14 @@ public class SecurityConfiguration {
                 .authorizeHttpRequests(authorize -> {
                     authorize.requestMatchers("/login").permitAll();
                     authorize.requestMatchers(HttpMethod.POST, "/usuarios/**").permitAll();
-                    authorize.requestMatchers("/autores/**").hasRole("ADMIN");
-                    authorize.requestMatchers("/livros/**").hasAnyRole("USER", "ADMIN");
+
+                    //authorize.requestMatchers("/autores/**").hasRole("ADMIN");
+                    //authorize.requestMatchers("/livros/**").hasAnyRole("USER", "ADMIN");
+
                     authorize.anyRequest().authenticated();
                 })
                 //.formLogin(configurer -> configurer.loginPage("/loginExemplo.html").successForwardUrl("/sucessoLogin.html"))
+                .oauth2Login(Customizer.withDefaults())
                 .build();
     }
 
@@ -62,6 +66,6 @@ public class SecurityConfiguration {
 //                .password(passwordEncoder.encode("senha1234"))
 //                .build();
 
-        return new CustomUserSecurityService(usuarioService);
+        return new CustomUserDetailsService(usuarioService);
     }
 }
