@@ -4,6 +4,7 @@ import io.github.mottacaina.libraryapi.dto.AutorDTO;
 import io.github.mottacaina.libraryapi.dto.ErroResposta;
 import io.github.mottacaina.libraryapi.exceptions.OperacaoNaoPermitidaException;
 import io.github.mottacaina.libraryapi.exceptions.RegistroDuplicadoException;
+import io.github.mottacaina.libraryapi.mappers.AutorMapper;
 import io.github.mottacaina.libraryapi.model.Autor;
 import io.github.mottacaina.libraryapi.repository.AutorRepository;
 import io.github.mottacaina.libraryapi.service.AutorService;
@@ -26,107 +27,81 @@ import java.util.stream.Collectors;
 @RestController
 @RequestMapping("/autores")
 @RequiredArgsConstructor
-public class AutorController {
+public class AutorController implements GenericController {
 
     private final AutorService autorService;
+    private final AutorMapper mapper;
 
     @PostMapping
 
-    public ResponseEntity<Object> salvar(@RequestBody @Valid AutorDTO autorDTO){
-        try {
-            var autorEntity = autorDTO.mapearParaAutor();
-            autorService.salvar(autorEntity);
+    public ResponseEntity<Void> salvar(@RequestBody @Valid AutorDTO autorDTO) {
 
-            URI location = ServletUriComponentsBuilder
-                    .fromCurrentContextPath()
-                    .path("/{id}")
-                    .buildAndExpand(autorEntity.getId())
-                    .toUri();
-
-            return ResponseEntity.created(location).build();
-        }
-        catch(RegistroDuplicadoException e){
-            var erroDTO = ErroResposta.conflito(e.getMessage());
-            return ResponseEntity.status(erroDTO.status()).body(erroDTO);
-        }
+        Autor autor = mapper.toEntity(autorDTO);
+        autorService.salvar(autor);
+        URI location = gerarHeaderLocation(autor.getId());
+        return ResponseEntity.created(location).build();
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<AutorDTO> obterDetalhes(@PathVariable("id") String id){
+    public ResponseEntity<AutorDTO> obterDetalhes(@PathVariable("id") String id) {
 
         var idAutor = UUID.fromString(id);
         Optional<Autor> autorOptional = autorService.obterPorId(idAutor);
-        if(autorOptional.isPresent()) {
-            Autor autor = autorOptional.get();
-            AutorDTO dto = new AutorDTO(
-                    autor.getId(),
-                    autor.getNome(),
-                    autor.getDataNascimento(),
-                    autor.getNacionalidade()
-            );
-            return ResponseEntity.ok(dto);
-        }
-        return  ResponseEntity.notFound().build();
+
+        return autorService
+                .obterPorId(idAutor)
+                .map(autor -> {
+                    AutorDTO dto = mapper.toDto(autor);
+                    return ResponseEntity.ok(dto);
+                }).orElseGet(
+                        () -> ResponseEntity.notFound().build()
+                );
+
     }
 
     @DeleteMapping("{/id}")
-    public ResponseEntity<Object> deletar(@PathVariable("id") String id){
-        try {
-            var idAutor = UUID.fromString(id);
-            Optional<Autor> autorOptional = autorService.obterPorId(idAutor);
+    public ResponseEntity<Void> deletar(@PathVariable("id") String id) {
 
-            if (autorOptional.isEmpty()) {
-                return ResponseEntity.notFound().build();
-            }
-
-            autorService.deletar(autorOptional.get());
-            return ResponseEntity.noContent().build();
-        } catch(OperacaoNaoPermitidaException e){
-
-            var erroDTO = ErroResposta.respostaPadrao(e.getMessage());
-            return ResponseEntity.status(erroDTO.status()).body(erroDTO);
+        var idAutor = UUID.fromString(id);
+        Optional<Autor> autorOptional = autorService.obterPorId(idAutor);
+        if (autorOptional.isEmpty()) {
+            return ResponseEntity.notFound().build();
         }
+        autorService.deletar(autorOptional.get());
+        return ResponseEntity.noContent().build();
     }
 
     @GetMapping
-    public ResponseEntity<List<AutorDTO>> pesquisar(@RequestParam(value ="nome", required = false) String nome ,
-                                                    @RequestParam(value = "nacionalidade", required = false) String nacionalidade){
+    public ResponseEntity<List<AutorDTO>> pesquisar(@RequestParam(value = "nome", required = false) String nome,
+                                                    @RequestParam(value = "nacionalidade", required = false) String nacionalidade) {
 
-        List<Autor> lista = autorService.pesquisa(nome, nacionalidade);
+        List<Autor> lista = autorService.pesquisaByExample(nome, nacionalidade);
         List<AutorDTO> listaDTO = lista
                 .stream()
-                .map(x -> new AutorDTO(
-                        x.getId(), x.getNome(),
-                        x.getDataNascimento(),
-                        x.getNacionalidade()))
+                .map(mapper::toDto)
                 .collect(Collectors.toList());
         return ResponseEntity.ok(listaDTO);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Object> atualizar(
+    public ResponseEntity<Void> atualizar(
             @PathVariable("id") String id,
-            @RequestBody AutorDTO dto)
-    {
-        try {
-            var idAutor = UUID.fromString(id);
-            Optional<Autor> autorOptional = autorService.obterPorId(idAutor);
+            @RequestBody @Valid AutorDTO dto) {
 
-            if (autorOptional.isEmpty()) {
-                return ResponseEntity.notFound().build();
-            }
+        var idAutor = UUID.fromString(id);
+        Optional<Autor> autorOptional = autorService.obterPorId(idAutor);
 
-            var autor = autorOptional.get();
-            autor.setNome(dto.nome());
-            autor.setNacionalidade(dto.nacionalidade());
-            autor.setDataNascimento(dto.dataNascimento());
-
-            autorService.atualizar(autor);
-
-            return ResponseEntity.noContent().build();
-        }catch (RegistroDuplicadoException e){
-            var erroDTO = ErroResposta.conflito(e.getMessage());
-            return ResponseEntity.status(erroDTO.status()).body(erroDTO);
+        if (autorOptional.isEmpty()) {
+            return ResponseEntity.notFound().build();
         }
+
+        var autor = autorOptional.get();
+        autor.setNome(dto.nome());
+        autor.setNacionalidade(dto.nacionalidade());
+        autor.setDataNascimento(dto.dataNascimento());
+
+        autorService.atualizar(autor);
+
+        return ResponseEntity.noContent().build();
     }
 }
