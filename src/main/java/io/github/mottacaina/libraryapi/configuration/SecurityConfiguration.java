@@ -1,8 +1,7 @@
 package io.github.mottacaina.libraryapi.configuration;
 
-import io.github.mottacaina.libraryapi.security.CustomUserDetailsService;
+import io.github.mottacaina.libraryapi.security.JwtCustomAuthenticationFilter;
 import io.github.mottacaina.libraryapi.security.LoginSocialSuccessHandler;
-import io.github.mottacaina.libraryapi.service.UsuarioService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -12,9 +11,9 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.core.GrantedAuthorityDefaults;
-import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
+import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
+import org.springframework.security.oauth2.server.resource.web.authentication.BearerTokenAuthenticationFilter;
 import org.springframework.security.web.SecurityFilterChain;
 
 @EnableWebSecurity
@@ -23,7 +22,7 @@ import org.springframework.security.web.SecurityFilterChain;
 public class SecurityConfiguration {
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http, LoginSocialSuccessHandler successHandler) throws Exception{
+    public SecurityFilterChain securityFilterChain(HttpSecurity http, LoginSocialSuccessHandler successHandler, JwtCustomAuthenticationFilter jwtCustomAuthenticationFilter) throws Exception{
         return http
                 .csrf(AbstractHttpConfigurer::disable)
                 .formLogin(configurer -> configurer
@@ -39,39 +38,31 @@ public class SecurityConfiguration {
                     authorize.anyRequest().authenticated();
                 })
                 //.formLogin(configurer -> configurer.loginPage("/loginExemplo.html").successForwardUrl("/sucessoLogin.html"))
-                .oauth2Login(oauth2 -> oauth2.loginPage("/login").successHandler(successHandler))
+                .oauth2Login(oauth2 ->
+                        oauth2
+                                .loginPage("/login")
+                                .successHandler(successHandler))
+                .oauth2ResourceServer(oauth2RS -> oauth2RS.jwt(Customizer.withDefaults()))
+                .addFilterAfter(jwtCustomAuthenticationFilter, BearerTokenAuthenticationFilter.class)
                 .build();
     }
 
-    @Bean
-    public PasswordEncoder passwordEncoder(){
-        return new BCryptPasswordEncoder(10);
-    }
 
-  // @Bean
-    public UserDetailsService userDetailsService(UsuarioService usuarioService){
-
-//
-//        UserDetails user1 = User
-//                .builder()
-//                .username("usuário")
-//                .roles("USER")
-//                .password(passwordEncoder.encode("senha123"))
-//                .build();
-//
-//
-//        UserDetails user2 = User
-//                .builder()
-//                .username("admin")
-//                .roles("ADMIN")
-//                .password(passwordEncoder.encode("senha1234"))
-//                .build();
-
-        return new CustomUserDetailsService(usuarioService);
-    }
-
+    //Configura o prexifo na role
     @Bean
     public GrantedAuthorityDefaults grantedAuthorityDefaults(){
         return new GrantedAuthorityDefaults("GRUPO_");
+    }
+
+    //Configura o prexifo no token jwt
+    @Bean
+    public JwtAuthenticationConverter jwtAuthenticationConverter(){
+        var authoritiesConverter = new JwtGrantedAuthoritiesConverter();
+        authoritiesConverter.setAuthorityPrefix("");
+
+        var converter = new JwtAuthenticationConverter();
+        converter.setJwtGrantedAuthoritiesConverter(authoritiesConverter);
+
+        return converter;
     }
 }
