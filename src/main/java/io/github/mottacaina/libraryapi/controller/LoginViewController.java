@@ -1,5 +1,6 @@
 package io.github.mottacaina.libraryapi.controller;
 
+import io.github.mottacaina.libraryapi.security.CustomAuthentication;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -17,6 +18,9 @@ public class LoginViewController {
     @ResponseBody
     public String paginaHome(Authentication authentication){
 
+        if(authentication instanceof CustomAuthentication customAuthentication){
+            System.out.println(customAuthentication.getUsuario());
+        }
         return "Olá" + authentication.getName();
     }
 }
