@@ -5,6 +5,7 @@ import io.github.mottacaina.libraryapi.dto.ErroResposta;
 import io.github.mottacaina.libraryapi.exceptions.CampoInvalidoException;
 import io.github.mottacaina.libraryapi.exceptions.OperacaoNaoPermitidaException;
 import io.github.mottacaina.libraryapi.exceptions.RegistroDuplicadoException;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
@@ -18,11 +19,13 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @RestControllerAdvice
+@Slf4j
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     @ResponseStatus(HttpStatus.UNPROCESSABLE_ENTITY)
     public ErroResposta handleMethodArgumentNotValidException(MethodArgumentNotValidException e){
+        log.info("Erro de validação");
         List<FieldError> fieldErros = e.getFieldErrors();
         List<ErroCampo> listaErros = fieldErros.stream().map(x -> new ErroCampo(x.getField(), x.getDefaultMessage()))
                 .collect(Collectors.toList());
@@ -63,7 +66,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(RuntimeException.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     public ErroResposta handleErrosNaoTratados(RuntimeException e){
-
+        log.info("Erro inesperado", e);
         return new ErroResposta(HttpStatus.INTERNAL_SERVER_ERROR.value(),
                 "Ocorreu um erro inesperado",
                 List.of());

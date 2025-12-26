@@ -1,8 +1,6 @@
 spring:
   application:
     name: libraryapi
-  profiles:
-    active: production
   output:
     ansi:
       enabled: ALWAYS
@@ -50,6 +48,3 @@ management:
 
 springdoc:
   override-with-generic-response: false
-
----
-
